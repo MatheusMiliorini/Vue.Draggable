@@ -982,6 +982,7 @@ module.exports = function (it, S) {
 "use strict";
 
 // 19.1.2.1 Object.assign(target, source, ...)
+var DESCRIPTORS = __webpack_require__("9e1e");
 var getKeys = __webpack_require__("0d58");
 var gOPS = __webpack_require__("2621");
 var pIE = __webpack_require__("52a7");
@@ -1011,7 +1012,10 @@ module.exports = !$assign || __webpack_require__("79e5")(function () {
     var length = keys.length;
     var j = 0;
     var key;
-    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
+    while (length > j) {
+      key = keys[j++];
+      if (!DESCRIPTORS || isEnum.call(S, key)) T[key] = S[key];
+    }
   } return T;
 } : $assign;
 
@@ -1076,7 +1080,7 @@ module.exports = function (it, tag, stat) {
 /***/ "8378":
 /***/ (function(module, exports) {
 
-var core = module.exports = { version: '2.6.5' };
+var core = module.exports = { version: '2.6.11' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
 
@@ -2107,6 +2111,11 @@ var props = {
     type: Object,
     required: false,
     default: null
+  },
+  onDragSwap: {
+    type: Boolean,
+    required: false,
+    default: false
   }
 };
 var draggableComponent = {
@@ -2288,9 +2297,21 @@ var draggableComponent = {
       this.alterList(spliceList);
     },
     updatePosition: function updatePosition(oldIndex, newIndex) {
-      var updatePosition = function updatePosition(list) {
-        return list.splice(newIndex, 0, list.splice(oldIndex, 1)[0]);
-      };
+      // This is customized for this specific package
+      var updatePosition;
+
+      if (this.onDragSwap) {
+        updatePosition = function updatePosition(list) {
+          var aux = list[newIndex];
+          list[newIndex] = list[oldIndex];
+          list[oldIndex] = aux;
+          return list;
+        };
+      } else {
+        updatePosition = function updatePosition(list) {
+          return list.splice(newIndex, 0, list.splice(oldIndex, 1)[0]);
+        };
+      }
 
       this.alterList(updatePosition);
     },
